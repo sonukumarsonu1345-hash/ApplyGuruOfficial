@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-paper text-ink-800 dark:bg-ink-900 dark:text-paper antialiased;
+    font-feature-settings: "ss01" on, "ss02" on;
+  }
+
+  ::selection {
+    @apply bg-saffron-300/60 text-ink-900;
+  }
+
+  :focus-visible {
+    outline: 2px solid #E8A33D;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-[0.18em] text-saffron-600 dark:text-saffron-300;
+  }
+
+  .card-surface {
+    @apply bg-white dark:bg-ink-800 border border-ink-100 dark:border-ink-600/60 rounded-2xl transition-all duration-300 ease-premium;
+  }
+
+  /* Premium hover-lift card: subtle rise + glow + border tint. Use on
+     interactive cards (links, buttons) rather than static surfaces. */
+  .card-interactive {
+    @apply card-surface hover:-translate-y-1 hover:border-saffron-300/70 hover:shadow-premium-sm dark:hover:border-saffron-400/40;
+  }
+
+  /* Frosted-glass surface for use over colored/dark or image backgrounds. */
+  .glass-surface {
+    @apply rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl backdrop-saturate-150 shadow-inner-glass dark:border-white/10 dark:bg-white/5;
+  }
+
+  .glass-panel {
+    @apply rounded-2xl border border-ink-100/80 bg-white/70 backdrop-blur-xl backdrop-saturate-150 dark:border-ink-600/40 dark:bg-ink-800/60;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-saffron-500 via-rust-400 to-plum-500 bg-clip-text text-transparent;
+  }
+
+  .shimmer-text {
+    background: linear-gradient(90deg, currentColor 40%, rgba(232,163,61,0.9) 50%, currentColor 60%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 3.5s linear infinite;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-ink-800 px-5 py-2.5 text-sm font-semibold text-paper transition-all duration-300 ease-premium hover:-translate-y-0.5 hover:bg-ink-700 hover:shadow-premium-sm dark:bg-saffron-400 dark:text-ink-900 dark:hover:bg-saffron-300;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-ink-200 dark:border-ink-500 px-5 py-2.5 text-sm font-semibold text-ink-700 dark:text-paper transition-all duration-300 ease-premium hover:-translate-y-0.5 hover:border-saffron-400 hover:text-saffron-600 dark:hover:border-saffron-300 dark:hover:text-saffron-300;
+  }
+
+  .tag {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-mono font-medium uppercase tracking-wide;
+  }
+
+  .btn-primary:disabled,
+  .btn-secondary:disabled {
+    @apply cursor-not-allowed opacity-60 hover:border-ink-200 hover:text-ink-700 dark:hover:border-ink-500 dark:hover:text-paper;
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-400;
+  }
+
+  .field-input {
+    @apply w-full rounded-lg border border-ink-200 bg-white px-3 py-2.5 text-sm text-ink-800 placeholder:text-ink-300 transition-colors focus:outline-none focus:border-saffron-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-ink-600 dark:bg-ink-900 dark:text-paper dark:placeholder:text-ink-400;
+  }
+
+  .field-error {
+    @apply mt-1.5 block text-xs text-rust-500 dark:text-rust-300;
+  }
+}
+
+@layer utilities {
+  .pause-on-interact:hover,
+  .pause-on-interact:focus-within {
+    animation-play-state: paused;
+  }
+
+  .bg-grid {
+    background-image: theme("backgroundImage.grid-lines");
+    background-size: 32px 32px;
+  }
+
+  /* Radial highlight that follows nothing (static) but gives a soft
+     "spotlight" feel behind hero/CTA content on premium sections. */
+  .bg-spotlight {
+    background: radial-gradient(60% 60% at 50% 0%, rgba(232,163,61,0.16), transparent 70%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
