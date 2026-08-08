@@ -1,0 +1,166 @@
+// Prisma schema for ApplyGuruOfficial
+//
+// Provider is PostgreSQL. Point DATABASE_URL at any Postgres instance
+// (local, Docker, Supabase, Neon, RDS, etc.) — see .env.example. Postgres
+// supports native enums, so `Role`, `Category`, and `ListingStatus` are
+// real enum types here (previously modeled as plain `String` back when
+// this schema targeted SQLite, which has no enum support).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+}
+
+enum Category {
+  job
+  result
+  admit_card
+  scholarship
+  yojana
+}
+
+enum ListingStatus {
+  open
+  closing_soon
+  closed
+  released
+  upcoming
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  /// bcrypt hash — only set for credentials-based accounts
+  passwordHash  String?
+  role          Role      @default(EDITOR)
+
+  accounts Account[]
+  sessions Session[]
+  listings Listing[]
+  media    Media[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// The three models below match the schema the Auth.js Prisma adapter
+// (@auth/prisma-adapter) expects verbatim. Even though this project only
+// uses the Credentials provider today (which never touches Account/Session
+// rows), keeping the adapter wired means an OAuth provider (Google, GitHub,
+// etc.) can be added later with zero schema changes.
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Single content table shared by all five public listing boards (Jobs,
+// Results, Admit Cards, Scholarships, Government Schemes/"yojana"), kept
+// separate from lib/data.ts's existing mock data. The admin UI presents
+// each category as its own CRUD section (see app/admin/(dashboard)/jobs,
+// /results, /admit-cards, /scholarships, /schemes), but they all read and
+// write this one table via the `category` column — this avoids five
+// near-identical tables/migrations for what is structurally the same
+// record shape, matching the DRY pattern the public site already uses
+// (components/CategoryPage.tsx) for the same five categories.
+model Listing {
+  id            String        @id @default(cuid())
+  slug          String        @unique
+  category      Category
+  title         String
+  org           String
+  postedOn      DateTime
+  closingOn     DateTime?
+  vacancies     Int?
+  qualification String?
+  status        ListingStatus @default(open)
+  /// comma-separated tags (kept as a delimited string rather than a
+  /// separate join table, since tags here are free-form labels, not a
+  /// managed taxonomy)
+  tags          String        @default("")
+  summary       String
+
+  /// Featured/OG image — set via the Media Library (stores the Media's
+  /// public URL, not a hard foreign key, so a listing keeps its image URL
+  /// even if the Media row is later removed from the library).
+  featuredImageUrl String?
+
+  // --- SEO fields -----------------------------------------------------
+  /// Browser tab / <title> / OG title. Falls back to `title` when blank.
+  seoTitle       String?
+  /// Meta description / OG description. Falls back to `summary` when blank.
+  seoDescription String?
+  // `slug` above doubles as the SEO-facing URL slug.
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([status])
+}
+
+// Media Library: every file uploaded through /admin/media. Files are
+// written to /public/uploads (see lib/actions/media.ts) and this row is
+// just the metadata + public URL pointing at it. See the note in
+// lib/actions/media.ts about swapping in S3/Cloudinary-style object
+// storage for a production deployment on serverless hosting, where the
+// local filesystem isn't persistent across deploys/instances.
+model Media {
+  id       String  @id @default(cuid())
+  url      String
+  filename String
+  mimeType String
+  size     Int
+  altText  String?
+
+  uploadedById String?
+  uploadedBy   User?   @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
